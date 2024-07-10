@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" opacity="0.44" prefHeight="449.0" prefWidth="525.0" spacing="20.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.vatc.kokscraftstats.SecondSceneController" stylesheets="@atlantafx/base.css">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+   <ToolBar prefHeight="40.0" prefWidth="200.0" translateY="-70.0">
+     <items>
+       <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="64.0" text="Odśwież" />
+         <Button text="Back to Logs" onAction="#switchToFirstScene" />
+     </items>
+      <VBox.margin>
+         <Insets />
+      </VBox.margin>
+   </ToolBar>
+
+    <Label fx:id="welcomeText" prefHeight="17.0" prefWidth="183.0" text="                  Lista graczy:" translateY="-85.0" />
+    <ScrollPane fx:id="scrollGlobal" prefHeight="200.0" prefWidth="200.0" snapToPixel="false" translateY="-100.0">
+        <content>
+            <TextArea fx:id="textAreaLogs" editable="false" wrapText="true" />
+        </content>
+    </ScrollPane>
+</VBox>
