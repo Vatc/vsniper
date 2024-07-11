@@ -8,7 +8,7 @@
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" opacity="0.44" prefHeight="449.0" prefWidth="525.0" spacing="20.0" stylesheets="@atlantafx/base.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.vatc.kokscraftstats.FirstSceneController">
+<VBox alignment="CENTER" opacity="0.44" prefHeight="749.0" prefWidth="954.0" spacing="20.0" stylesheets="@atlantafx/base.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.vatc.kokscraftstats.FirstSceneController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -18,7 +18,7 @@
             <graphic>
                <Icon content="SETTINGS" prefHeight="32.0" prefWidth="32.0" />
             </graphic></Button>
-         <Button fx:id="delete" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" mnemonicParsing="false" onAction="#clearTable" text="Wyczyść" textFill="WHITE">
+         <Button fx:id="delete" contentDisplay="TEXT_ONLY" graphicTextGap="0.0" mnemonicParsing="false" onAction="#clearTableFXML" text="Wyczyść" textFill="WHITE">
              <graphic>
                  <Icon content="DELETE" prefHeight="32.0" prefWidth="32.0" />
              </graphic>
@@ -33,7 +33,7 @@
          <Insets />
       </VBox.margin>
    </ToolBar>
-   <TableView fx:id="GlobalTable" prefHeight="352.0" prefWidth="485.0">
+   <TableView fx:id="GlobalTable" prefHeight="641.0" prefWidth="914.0">
      <columns>
        <TableColumn fx:id="playerRank" prefWidth="30.0" text="Ranga" />
        <TableColumn fx:id="playerName" prefWidth="75.0" text="Nick" />

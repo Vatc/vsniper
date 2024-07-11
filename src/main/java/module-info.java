@@ -1,6 +1,7 @@
 module me.vatc.kokscraftstats {
     requires javafx.controls;
     requires javafx.fxml;
+    requires atlantafx.base;
 
     requires org.kordamp.bootstrapfx.core;
 

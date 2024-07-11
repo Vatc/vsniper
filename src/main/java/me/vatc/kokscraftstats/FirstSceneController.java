@@ -4,18 +4,27 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static me.vatc.kokscraftstats.utils.LogsUtil.*;
+import static me.vatc.kokscraftstats.utils.LogsUtil.extractUsername;
+import static me.vatc.kokscraftstats.utils.LogsUtil.split;
 
 public class FirstSceneController {
     @FXML
@@ -23,28 +32,36 @@ public class FirstSceneController {
     @FXML
     private TableColumn<LogEntry, String> playerName;
     @FXML
-    private TableColumn<LogEntry, String> playerRank; // Nowa kolumna
+    private TableColumn<LogEntry, String> playerRank;
     @FXML
-    private TableColumn<LogEntry, String> playerTags; // Nowa kolumna
+    private TableColumn<LogEntry, String> playerTags;
     @FXML
     private Button settingsButton;
 
     private static final String LOG_DIRECTORY = System.getProperty("user.home") + "\\.lunarclient\\logs\\game";
     private static final String SPECIAL_TEXT = "dolacza do gry";
+    private static final String SETTING_USER_TEXT = "Setting user:";
+    private static final String ASSETS_MESSAGE = "[LC] Assets";
+    private static final String LEAVING_MESSAGE = " wychodzi z serwera!";
 
     private long lastKnownPosition = 0;
     private File currentLogFile;
     private Stage primaryStage;
 
     private ObservableList<LogEntry> logData = FXCollections.observableArrayList();
+    private String latestSettingUser = ""; // Variable to store the latest setting user
 
     @FXML
     public void initialize() {
         playerName.setCellValueFactory(new PropertyValueFactory<>("playerName"));
-        playerRank.setCellValueFactory(new PropertyValueFactory<>("playerRank")); // Wiązanie kolumny logTime z polem "time" w LogEntry
-        playerTags.setCellValueFactory(new PropertyValueFactory<>("playerTags")); // Wiązanie kolumny logInfo z polem "info" w LogEntry
+        playerRank.setCellValueFactory(new PropertyValueFactory<>("playerRank"));
+        playerTags.setCellValueFactory(new PropertyValueFactory<>("playerTags"));
 
         GlobalTable.setItems(logData);
+
+        Label placeholder = new Label("Wybierz arenę, aby zapisać graczy.");
+        GlobalTable.setPlaceholder(placeholder);
+
         findLatestLogFile();
         watchLogFile();
     }
@@ -69,6 +86,7 @@ public class FirstSceneController {
             }
 
             currentLogFile = newestLogFile;
+            lastKnownPosition = currentLogFile.length(); // Set position to end of file
         } else {
             System.out.println("No .log files found in directory: " + LOG_DIRECTORY);
         }
@@ -114,39 +132,92 @@ public class FirstSceneController {
 
     private void readNewLinesFromFile(File file) {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            raf.seek(lastKnownPosition);
-
+            // Search the whole file for SETTING_USER_TEXT only once
+            long fileLength = raf.length();
             String line;
+
+            raf.seek(lastKnownPosition); // Set pointer to last known position for SPECIAL_TEXT
+
             while ((line = raf.readLine()) != null) {
                 lastKnownPosition = raf.getFilePointer();
 
-                if (line.contains(SPECIAL_TEXT)) {
-                    String finalLine = line;
-                    String[] result = split(extractUsername(finalLine));
-                    System.out.println(extractUsername(finalLine));
-                    String rank;
-                    String name;
-                    if (result.length <= 1) {
-                        rank = "";
-                    } else {
-                        rank = result[0];
-                    }
-
-                    if (result.length == 1) {
-                        name = result[0];
-                    } else {
-                        name = result[1];
-                    }
-
-
-                    Platform.runLater(() -> {
-                        logData.add(new LogEntry(name, rank, "-"));
-                    });
+                if (line.contains(ASSETS_MESSAGE)) {
+                    clearTable();
+                } else if (line.contains(SPECIAL_TEXT)) {
+                    handleSpecialTextLine(line);
+                } else if (line.contains(SETTING_USER_TEXT)) {
+                    latestSettingUser = extractUsernameFromSettingUser(line); // Update latest setting user
+                } else if (line.contains(LEAVING_MESSAGE)) {
+                    handleLeavingMessage(line);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleSpecialTextLine(String line) {
+        String[] result = split(extractUsername(line));
+        String rank = (result.length > 1) ? result[0] : "";
+        String name = (result.length > 0) ? result[result.length - 1] : "";
+
+        if (name.equals("Vatc") || name.equals("Puszak")) {
+            addOrUpdateLogEntry(name, rank, "Sigma skilled player");
+        } else {
+            addOrUpdateLogEntry(name, rank, "");
+        }
+    }
+
+    private void handleLeavingMessage(String line) {
+        String user = extractUsernameFromLeavingServer(line);
+        if (user != null) {
+            removeEntry(user);
+        }
+    }
+
+    private void addOrUpdateLogEntry(String name, String rank, String tags) {
+        Platform.runLater(() -> {
+            boolean found = false;
+            for (LogEntry entry : logData) {
+                if (entry.getPlayerName().equals(name)) {
+                    entry.setPlayerRank(rank);
+                    entry.setPlayerTags(tags);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                logData.add(new LogEntry(name, rank, tags));
+            }
+        });
+    }
+
+    private void removeEntry(String username) {
+        Platform.runLater(() -> {
+            LogEntry entryToRemove = null;
+            for (LogEntry entry : logData) {
+                if (entry.getPlayerName().equals(username)) {
+                    entryToRemove = entry;
+                    break;
+                }
+            }
+            if (entryToRemove != null) {
+                logData.remove(entryToRemove);
+            }
+        });
+    }
+
+    private void clearTable() {
+        Platform.runLater(() -> {
+            logData.clear();
+        });
+    }
+
+    @FXML
+    private void clearTableFXML() {
+        Platform.runLater(() -> {
+            logData.clear();
+        });
     }
 
     @FXML
@@ -156,8 +227,8 @@ public class FirstSceneController {
 
     public static class LogEntry {
         private final String playerName;
-        private final String playerRank;
-        private final String playerTags;
+        private String playerRank;
+        private String playerTags;
 
         public LogEntry(String playerName, String playerRank, String playerTags) {
             this.playerName = playerName;
@@ -173,19 +244,36 @@ public class FirstSceneController {
             return playerRank;
         }
 
+        public void setPlayerRank(String playerRank) {
+            this.playerRank = playerRank;
+        }
+
         public String getPlayerTags() {
             return playerTags;
         }
+
+        public void setPlayerTags(String playerTags) {
+            this.playerTags = playerTags;
+        }
+    }
+
+    private String extractUsernameFromSettingUser(String line) {
+        int startIndex = line.indexOf(SETTING_USER_TEXT) + SETTING_USER_TEXT.length();
+        return line.substring(startIndex).trim();
+    }
+
+    private String extractUsernameFromLeavingServer(String line) {
+        int startIndex = line.lastIndexOf("[CHAT]") + "[CHAT]".length();
+        int endIndex = line.indexOf(" wychodzi z serwera!");
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            return line.substring(startIndex, endIndex).trim();
+        }
+        return null;
     }
 
     private String getCurrentTime() {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
         Date date = new Date();
         return formatter.format(date);
-    }
-
-    @FXML
-    private void clearTable() {
-        logData.clear();
     }
 }
