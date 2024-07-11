@@ -7,8 +7,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+
+import java.io.FileInputStream;
 
 public class Main extends Application {
 
@@ -27,9 +30,11 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/me/vatc/kokscraftstats/firstScene.fxml"));
         Application.setUserAgentStylesheet(new Dracula().getUserAgentStylesheet());
 
+        Image icon = new Image(new FileInputStream("src/main/resources/iconB.png"));
+        primaryStage.getIcons().add(icon);
+        primaryStage.setOpacity(0.9);
 
-
-
+        primaryStage.setTitle("Kokslify");
 
         Parent root = loader.load();
         Scene scene = new Scene(root);
@@ -44,6 +49,7 @@ public class Main extends Application {
         Application.setUserAgentStylesheet(new Dracula().getUserAgentStylesheet());
         Parent root = loader.load();
         Scene scene = new Scene(root);
+        primaryStage.setTitle("Kokslify");
         primaryStage.setScene(scene);
 
         SecondSceneController controller = loader.getController();
