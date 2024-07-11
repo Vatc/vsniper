@@ -1,35 +1,50 @@
 package me.vatc.kokscraftstats;
 
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
 import java.io.*;
 import java.nio.file.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static me.vatc.kokscraftstats.utils.LogsUtil.*;
 
 public class FirstSceneController {
     @FXML
-    private ScrollPane scrollGlobal;
+    private TableView<LogEntry> GlobalTable;
     @FXML
-    private TextArea textAreaLogs;
+    private TableColumn<LogEntry, String> playerName;
+    @FXML
+    private TableColumn<LogEntry, String> playerRank; // Nowa kolumna
+    @FXML
+    private TableColumn<LogEntry, String> playerTags; // Nowa kolumna
     @FXML
     private Button settingsButton;
 
-    private static final String LOG_DIRECTORY = "C:\\Users\\Pc\\.lunarclient\\logs\\game";
-    private static final String SPECIAL_TEXT = "Vatc";
+    private static final String LOG_DIRECTORY = System.getProperty("user.home") + "\\.lunarclient\\logs\\game";
+    private static final String SPECIAL_TEXT = "dolacza do gry";
 
     private long lastKnownPosition = 0;
     private File currentLogFile;
     private Stage primaryStage;
 
+    private ObservableList<LogEntry> logData = FXCollections.observableArrayList();
+
     @FXML
     public void initialize() {
-        textAreaLogs.setWrapText(true);
-        textAreaLogs.setEditable(false);
-        scrollGlobal.setContent(textAreaLogs);
+        playerName.setCellValueFactory(new PropertyValueFactory<>("playerName"));
+        playerRank.setCellValueFactory(new PropertyValueFactory<>("playerRank")); // Wiązanie kolumny logTime z polem "time" w LogEntry
+        playerTags.setCellValueFactory(new PropertyValueFactory<>("playerTags")); // Wiązanie kolumny logInfo z polem "info" w LogEntry
+
+        GlobalTable.setItems(logData);
         findLatestLogFile();
         watchLogFile();
     }
@@ -107,9 +122,25 @@ public class FirstSceneController {
 
                 if (line.contains(SPECIAL_TEXT)) {
                     String finalLine = line;
+                    String[] result = split(extractUsername(finalLine));
+                    System.out.println(extractUsername(finalLine));
+                    String rank;
+                    String name;
+                    if (result.length <= 1) {
+                        rank = "";
+                    } else {
+                        rank = result[0];
+                    }
+
+                    if (result.length == 1) {
+                        name = result[0];
+                    } else {
+                        name = result[1];
+                    }
+
+
                     Platform.runLater(() -> {
-                        textAreaLogs.appendText("Znaleziono " + SPECIAL_TEXT + ": " + finalLine + "\n");
-                        scrollGlobal.setVvalue(1.0);
+                        logData.add(new LogEntry(name, rank, "-"));
                     });
                 }
             }
@@ -121,5 +152,40 @@ public class FirstSceneController {
     @FXML
     private void switchToSecondScene() throws Exception {
         Main.showSecondScene();
+    }
+
+    public static class LogEntry {
+        private final String playerName;
+        private final String playerRank;
+        private final String playerTags;
+
+        public LogEntry(String playerName, String playerRank, String playerTags) {
+            this.playerName = playerName;
+            this.playerRank = playerRank;
+            this.playerTags = playerTags;
+        }
+
+        public String getPlayerName() {
+            return playerName;
+        }
+
+        public String getPlayerRank() {
+            return playerRank;
+        }
+
+        public String getPlayerTags() {
+            return playerTags;
+        }
+    }
+
+    private String getCurrentTime() {
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+        Date date = new Date();
+        return formatter.format(date);
+    }
+
+    @FXML
+    private void clearTable() {
+        logData.clear();
     }
 }
