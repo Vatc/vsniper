@@ -6,10 +6,18 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
+import javafx.util.Callback;
+import me.vatc.kokscraftstats.utils.DataUtil;
+import me.vatc.kokscraftstats.utils.TagUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,12 +55,72 @@ public class FirstSceneController {
     private long lastKnownPosition = 0;
     private File currentLogFile;
     private Stage primaryStage;
+    private double xOffset = 0;
+    private double yOffset = 0;
+
+    private long lastProcessedTime = 0;
+
+    @FXML
+    private VBox rootPane;
+
+    @FXML
+    private Button closeButton;
+
+    @FXML
+    private Button refreshButton;
+
+    @FXML
+    private Button deleteButton;
+
+    @FXML
+    private Button minimizeButton;
+
+
+    private TagUtil tagUtil;
+
+    public FirstSceneController() {
+        tagUtil = tagUtil.getInstance();
+    }
+
+    @FXML
 
     private ObservableList<LogEntry> logData = FXCollections.observableArrayList();
     private String latestSettingUser = ""; // Variable to store the latest setting user
 
     @FXML
     public void initialize() {
+
+        Image iconImage = new Image(getClass().getResourceAsStream("/me/vatc/kokscraftstats/icons/close.png"));
+        ImageView iconView = new ImageView(iconImage);
+        iconView.setFitWidth(28);
+        iconView.setFitHeight(28);
+        closeButton.setGraphic(iconView);
+
+        Image iconImage2 = new Image(getClass().getResourceAsStream("/me/vatc/kokscraftstats/icons/minimize.png"));
+        ImageView iconView2 = new ImageView(iconImage2);
+        iconView2.setFitWidth(28);
+        iconView2.setFitHeight(28);
+        minimizeButton.setGraphic(iconView2);
+
+        Image iconImage3 = new Image(getClass().getResourceAsStream("/me/vatc/kokscraftstats/icons/settings.png"));
+        ImageView iconView3 = new ImageView(iconImage3);
+        iconView3.setFitWidth(28);
+        iconView3.setFitHeight(28);
+        settingsButton.setGraphic(iconView3);
+
+        Image iconImage4 = new Image(getClass().getResourceAsStream("/me/vatc/kokscraftstats/icons/refresh.png"));
+        ImageView iconView4 = new ImageView(iconImage4);
+        iconView4.setFitWidth(28);
+        iconView4.setFitHeight(28);
+        refreshButton.setGraphic(iconView4);
+
+        Image iconImage5 = new Image(getClass().getResourceAsStream("/me/vatc/kokscraftstats/icons/delete.png"));
+        ImageView iconView5 = new ImageView(iconImage5);
+        iconView5.setFitWidth(28);
+        iconView5.setFitHeight(28);
+        deleteButton.setGraphic(iconView5);
+
+
         playerName.setCellValueFactory(new PropertyValueFactory<>("playerName"));
         playerRank.setCellValueFactory(new PropertyValueFactory<>("playerRank"));
         playerTags.setCellValueFactory(new PropertyValueFactory<>("playerTags"));
@@ -62,8 +130,23 @@ public class FirstSceneController {
         Label placeholder = new Label("Wybierz arenę, aby zapisać graczy.");
         GlobalTable.setPlaceholder(placeholder);
 
+        // Set cell factory to add custom styling for each column
+        playerName.setCellFactory(createCellFactory());
+        playerRank.setCellFactory(createCellFactory());
+        playerTags.setCellFactory(createCellFactory());
+
         findLatestLogFile();
         watchLogFile();
+
+        rootPane.setOnMousePressed(event -> {
+            xOffset = event.getSceneX();
+            yOffset = event.getSceneY();
+        });
+
+        rootPane.setOnMouseDragged(event -> {
+            primaryStage.setX(event.getScreenX() - xOffset);
+            primaryStage.setY(event.getScreenY() - yOffset);
+        });
     }
 
     public void setPrimaryStage(Stage primaryStage) {
@@ -132,23 +215,28 @@ public class FirstSceneController {
 
     private void readNewLinesFromFile(File file) {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            // Search the whole file for SETTING_USER_TEXT only once
-            long fileLength = raf.length();
+            // Przeszukaj plik tylko od ostatnio znanej pozycji, ale po czasie lastProcessedTime
+            raf.seek(lastKnownPosition);
             String line;
-
-            raf.seek(lastKnownPosition); // Set pointer to last known position for SPECIAL_TEXT
-
             while ((line = raf.readLine()) != null) {
                 lastKnownPosition = raf.getFilePointer();
-
+                String currentTime = getCurrentTime(); // Pobierz bieżący czas
                 if (line.contains(ASSETS_MESSAGE)) {
                     clearTable();
                 } else if (line.contains(SPECIAL_TEXT)) {
                     handleSpecialTextLine(line);
+                    Platform.runLater(() -> {
+                        primaryStage.setIconified(false);
+                    });
                 } else if (line.contains(SETTING_USER_TEXT)) {
                     latestSettingUser = extractUsernameFromSettingUser(line); // Update latest setting user
                 } else if (line.contains(LEAVING_MESSAGE)) {
                     handleLeavingMessage(line);
+                } else if (line.contains("[CHAT] Start!") && parseTime(line) > lastProcessedTime) {
+                    Platform.runLater(() -> {
+                        primaryStage.setIconified(true);
+                    });
+                    lastProcessedTime = parseTime(line); // Ustaw nowy czas ostatnio przetworzonej linii
                 }
             }
         } catch (IOException e) {
@@ -156,15 +244,30 @@ public class FirstSceneController {
         }
     }
 
+    private long parseTime(String line) {
+        // Funkcja do parsowania czasu z linii, która zawiera "[CHAT] Start!"
+        // Przykładowa implementacja, zależy od formatu czasu w logach
+        return System.currentTimeMillis(); // Zwróć bieżący czas w milisekundach jako przykład
+    }
+
     private void handleSpecialTextLine(String line) {
         String[] result = split(extractUsername(line));
         String rank = (result.length > 1) ? result[0] : "";
         String name = (result.length > 0) ? result[result.length - 1] : "";
 
-        if (name.equals("Vatc") || name.equals("Puszak")) {
-            addOrUpdateLogEntry(name, rank, "Sigma skilled player");
+        System.out.println(latestSettingUser);
+        if (name.equals(latestSettingUser)) {
+            if (tagUtil.containsNick(name)) {
+                addOrUpdateLogEntry(name, "TY" + rank, tagUtil.getTag(name), tagUtil.getColor(name));
+            } else {
+                addOrUpdateLogEntry(name, "TY" + rank, "", "");
+            }
         } else {
-            addOrUpdateLogEntry(name, rank, "");
+            if (tagUtil.containsNick(name)) {
+                addOrUpdateLogEntry(name, rank, tagUtil.getTag(name), tagUtil.getColor(name));
+            } else {
+                addOrUpdateLogEntry(name, rank, "", "");
+            }
         }
     }
 
@@ -175,19 +278,20 @@ public class FirstSceneController {
         }
     }
 
-    private void addOrUpdateLogEntry(String name, String rank, String tags) {
+    private void addOrUpdateLogEntry(String name, String rank, String tags, String backgroundColor) {
         Platform.runLater(() -> {
             boolean found = false;
             for (LogEntry entry : logData) {
                 if (entry.getPlayerName().equals(name)) {
                     entry.setPlayerRank(rank);
                     entry.setPlayerTags(tags);
+                    entry.setBackgroundColor(backgroundColor);
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                logData.add(new LogEntry(name, rank, tags));
+                logData.add(new LogEntry(name, rank, tags, backgroundColor));
             }
         });
     }
@@ -229,11 +333,13 @@ public class FirstSceneController {
         private final String playerName;
         private String playerRank;
         private String playerTags;
+        private String backgroundColor;
 
-        public LogEntry(String playerName, String playerRank, String playerTags) {
+        public LogEntry(String playerName, String playerRank, String playerTags, String backgroundColor) {
             this.playerName = playerName;
             this.playerRank = playerRank;
             this.playerTags = playerTags;
+            this.backgroundColor = backgroundColor;
         }
 
         public String getPlayerName() {
@@ -255,6 +361,14 @@ public class FirstSceneController {
         public void setPlayerTags(String playerTags) {
             this.playerTags = playerTags;
         }
+
+        public String getBackgroundColor() {
+            return backgroundColor;
+        }
+
+        public void setBackgroundColor(String backgroundColor) {
+            this.backgroundColor = backgroundColor;
+        }
     }
 
     private String extractUsernameFromSettingUser(String line) {
@@ -275,5 +389,38 @@ public class FirstSceneController {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
         Date date = new Date();
         return formatter.format(date);
+    }
+
+    @FXML
+    private void minimizeWindow() {
+        primaryStage.setIconified(true);
+    }
+
+    @FXML
+    private void closeWindow() {
+        primaryStage.close();
+    }
+
+    private Callback<TableColumn<LogEntry, String>, TableCell<LogEntry, String>> createCellFactory() {
+        return column -> new TableCell<LogEntry, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setStyle(""); // Upewnij się, że czyszczesz styl, jeśli komórka jest pusta
+                } else {
+                    setText(item);
+                    // Get corresponding LogEntry
+                    LogEntry entry = getTableView().getItems().get(getIndex());
+                    // Set background color style
+                    if (entry.getBackgroundColor() != null && !entry.getBackgroundColor().isEmpty()) {
+                        setStyle("-fx-background-color: " + entry.getBackgroundColor() + ";");
+                    } else {
+                        setStyle(""); // Upewnij się, że czyszczesz styl, jeśli kolor tła nie jest ustawiony
+                    }
+                }
+            }
+        };
     }
 }

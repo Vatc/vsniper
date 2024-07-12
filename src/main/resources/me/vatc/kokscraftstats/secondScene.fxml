@@ -1,27 +1,127 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" opacity="0.44" prefHeight="449.0" prefWidth="525.0" spacing="20.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.vatc.kokscraftstats.SecondSceneController" stylesheets="@atlantafx/base.css">
+<VBox fx:id="rootPane" alignment="CENTER" opacity="0.44" prefHeight="749.0" prefWidth="954.0" spacing="20.0" stylesheets="@atlantafx/base.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.vatc.kokscraftstats.SecondSceneController">
+    <AnchorPane prefHeight="32.0" prefWidth="946.0">
+        <children>
+            <Button fx:id="closeButton" alignment="CENTER_RIGHT" contentDisplay="GRAPHIC_ONLY" layoutX="872.0" onAction="#closeWindow" style="-fx-focus-traversable: false;" text="Close" />
+            <Button fx:id="minimizeButton" alignment="CENTER_RIGHT" contentDisplay="GRAPHIC_ONLY" layoutX="817.0" onAction="#minimizeWindow" style="-fx-focus-traversable: false;" text="Minimize" />
+            <Button fx:id="backToMainButton" contentDisplay="GRAPHIC_ONLY" layoutX="7.0" onAction="#switchToFirstScene" style="-fx-background-radius: 7; -fx-focus-traversable: false;" text="Back" />
+        </children>
+    </AnchorPane>
+   <TabPane prefHeight="665.0" prefWidth="914.0" tabClosingPolicy="UNAVAILABLE">
+     <tabs>
+       <Tab closable="false" text="Ogólne">
+         <content>
+           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                  <children>
+                     <Group layoutX="12.0" layoutY="14.0">
+                        <children>
+                           <Pane depthTest="ENABLE" prefHeight="86.0" prefWidth="891.0" style="-fx-background-color: -color-base-8; -fx-background-radius: 15;">
+                              <children>
+                                 <ChoiceBox fx:id="minecraftClient" layoutX="671.0" layoutY="22.0" prefHeight="42.0" prefWidth="178.0" />
+                                 <Label layoutX="21.0" layoutY="18.0" prefHeight="28.0" prefWidth="185.0" text="Klient Minecraft">
+                                    <font>
+                                       <Font name="System Bold" size="17.0" />
+                                    </font>
+                                 </Label>
+                                 <Label layoutX="21.0" layoutY="37.0" prefHeight="32.0" prefWidth="452.0" text="Wybierz, z którego klienta Minecraft korzystasz." textFill="#a4a4a4" />
+                              </children>
+                           </Pane>
+                        </children>
+                     </Group>
+                     <Group layoutX="12.0" layoutY="117.0">
+                        <children>
+                           <Pane depthTest="ENABLE" prefHeight="86.0" prefWidth="891.0" style="-fx-background-color: -color-base-8; -fx-background-radius: 15;">
+                              <children>
+                                 <Label layoutX="21.0" layoutY="16.0" prefHeight="28.0" prefWidth="185.0" text="Przezroczystość">
+                                    <font>
+                                       <Font name="System Bold" size="17.0" />
+                                    </font>
+                                 </Label>
+                                 <Label layoutX="21.0" layoutY="44.0" prefHeight="26.0" prefWidth="452.0" text="Możesz zmienić przejrzystość tła aplikacji." textFill="#a4a4a4" />
+                                 <Slider fx:id="transparencySlider" blockIncrement="0.1" layoutX="673.0" layoutY="34.0" max="1.0" min="0.2" prefHeight="20.0" prefWidth="175.0" value="1.0" />
+                              </children>
+                           </Pane>
+                        </children>
+                     </Group>
+                     <Group layoutX="12.0" layoutY="219.0">
+                        <children>
+                           <Pane depthTest="ENABLE" prefHeight="86.0" prefWidth="891.0" style="-fx-background-color: -color-base-8; -fx-background-radius: 15;">
+                              <children>
+                                 <Label layoutX="21.0" layoutY="16.0" prefHeight="28.0" prefWidth="185.0" text="Minimalizowanie">
+                                    <font>
+                                       <Font name="System Bold" size="17.0" />
+                                    </font>
+                                 </Label>
+                                 <Label layoutX="21.0" layoutY="44.0" prefHeight="26.0" prefWidth="452.0" text="Aplikacja będzie się minimalizować podczas różnych wydarzeń." textFill="#a4a4a4" />
+                                 <ChoiceBox fx:id="minimalizeChoice" layoutX="671.0" layoutY="22.0" prefHeight="42.0" prefWidth="179.0" />
+                              </children>
+                           </Pane>
+                        </children>
+                     </Group>
+                     <Group layoutX="12.0" layoutY="321.0">
+                        <children>
+                           <Pane depthTest="ENABLE" prefHeight="86.0" prefWidth="891.0" style="-fx-background-color: -color-base-8; -fx-background-radius: 15;">
+                              <children>
+                                 <Label layoutX="21.0" layoutY="16.0" prefHeight="28.0" prefWidth="185.0" text="Styl aplikacji">
+                                    <font>
+                                       <Font name="System Bold" size="17.0" />
+                                    </font>
+                                 </Label>
+                                 <Label layoutX="21.0" layoutY="44.0" prefHeight="26.0" prefWidth="452.0" text="Wybierz kolor, który będzie głównym motywem aplikacji." textFill="#a4a4a4" />
+                                 <ColorPicker fx:id="themeColorPicker" layoutX="669.0" layoutY="23.0" prefHeight="40.0" prefWidth="180.0" />
+                              </children>
+                           </Pane>
+                        </children>
+                     </Group>
+                  </children>
+               </AnchorPane>
+         </content>
+       </Tab>
+       <Tab closable="false" text="Tagi">
+         <content>
+           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="541.0" prefWidth="914.0">
+                  <children>
+                     <Button fx:id="deleteFromTable" contentDisplay="GRAPHIC_ONLY" layoutX="850.0" layoutY="14.0" onAction="#handleDeleteButton" style="-fx-background-radius: 7; -fx-focus-traversable: false;" text="DeleteFromTable" />
+                     <TableView fx:id="settingsTable" layoutX="26.0" layoutY="60.0" prefHeight="483.0" prefWidth="859.0" style="-fx-background-color: -color-base-10;">
+                       <columns>
+                         <TableColumn fx:id="settingsPlayerName" prefWidth="308.0" text="Nick" />
+                         <TableColumn fx:id="settingsPlayerTag" minWidth="0.0" prefWidth="545.0" text="Tagi" />
+                       </columns>
+                     </TableView>
+                     <TextField fx:id="playerNameInput" layoutX="30.0" layoutY="556.0" promptText="Nick" />
+                     <TextField fx:id="playerTagInput" layoutX="222.0" layoutY="556.0" prefHeight="32.0" prefWidth="411.0" promptText="Tag" />
+                     <Button fx:id="addTagButton" layoutX="819.0" layoutY="556.0" mnemonicParsing="false" style="-fx-background-color: -color-success-8;" text="Dodaj" />
+                     <ColorPicker fx:id="playerColorInput" layoutX="646.0" layoutY="556.0">
+                        <value>
+                           <Color red="1.0" />
+                        </value>
+                     </ColorPicker>
+                  </children>
+               </AnchorPane>
+         </content>
+       </Tab>
+     </tabs>
+   </TabPane>
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
-   <ToolBar prefHeight="40.0" prefWidth="200.0" translateY="-70.0">
-     <items>
-       <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="64.0" text="Odśwież" />
-         <Button text="Back to Logs" onAction="#switchToFirstScene" />
-     </items>
-      <VBox.margin>
-         <Insets />
-      </VBox.margin>
-   </ToolBar>
-
-    <Label fx:id="welcomeText" prefHeight="17.0" prefWidth="183.0" text="                  Lista graczy:" translateY="-85.0" />
-    <ScrollPane fx:id="scrollGlobal" prefHeight="200.0" prefWidth="200.0" snapToPixel="false" translateY="-100.0">
-        <content>
-            <TextArea fx:id="textAreaLogs" editable="false" wrapText="true" />
-        </content>
-    </ScrollPane>
 </VBox>
